@@ -1,35 +1,126 @@
 use crate::models::{
-    Commit, CreateCommit, CreateIssue, CreatePullRequest, CreateRepository, Issue, PullRequest,
-    Repository, WebhookEvent,
+    github::{
+        Commit, CreateCommit, CreateIssue, CreatePullRequest, CreateRepository, Issue, PullRequest,
+        Repository,
+    },
+    CreateEvent, Event,
 };
 use chrono::{DateTime, Utc};
 use serde_json::Value as JsonValue;
 use sqlx::PgPool;
+use uuid::Uuid;
 
-pub async fn process_webhook_event(
-    pool: &PgPool,
-    event: &WebhookEvent,
-) -> Result<(), ProcessingError> {
+/// Extract actor information from GitHub webhook payload
+pub fn extract_actor_info(payload: &JsonValue) -> (Option<String>, Option<String>, Option<String>) {
+    let actor_name = payload
+        .get("sender")
+        .and_then(|s| s.get("login"))
+        .and_then(|l| l.as_str())
+        .or_else(|| {
+            payload
+                .get("pusher")
+                .and_then(|p| p.get("name"))
+                .and_then(|n| n.as_str())
+        })
+        .or_else(|| {
+            payload
+                .get("commits")
+                .and_then(|c| c.get(0))
+                .and_then(|c| c.get("author"))
+                .and_then(|a| a.get("name"))
+                .and_then(|n| n.as_str())
+        })
+        .map(|s| s.to_string());
+
+    let actor_email = payload
+        .get("sender")
+        .and_then(|s| s.get("email"))
+        .and_then(|e| e.as_str())
+        .or_else(|| {
+            payload
+                .get("pusher")
+                .and_then(|p| p.get("email"))
+                .and_then(|e| e.as_str())
+        })
+        .or_else(|| {
+            payload
+                .get("commits")
+                .and_then(|c| c.get(0))
+                .and_then(|c| c.get("author"))
+                .and_then(|a| a.get("email"))
+                .and_then(|e| e.as_str())
+        })
+        .map(|s| s.to_string());
+
+    let actor_id = payload
+        .get("sender")
+        .and_then(|s| s.get("login"))
+        .and_then(|l| l.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            payload
+                .get("sender")
+                .and_then(|s| s.get("id"))
+                .and_then(|i| i.as_i64())
+                .map(|i| i.to_string())
+        })
+        .or_else(|| {
+            payload
+                .get("pusher")
+                .and_then(|p| p.get("name"))
+                .and_then(|n| n.as_str())
+                .map(|s| s.to_string())
+        });
+
+    (actor_name, actor_email, actor_id)
+}
+
+/// Convert GitHub webhook to generic event
+pub fn convert_github_webhook_to_event(
+    event_type: String,
+    event_action: Option<String>,
+    payload: JsonValue,
+    delivery_id: Uuid,
+    signature: Option<String>,
+    repository_id: Option<i64>,
+) -> CreateEvent {
+    let (actor_name, actor_email, actor_id) = extract_actor_info(&payload);
+
+    CreateEvent {
+        source: "github".to_string(),
+        event_type,
+        action: event_action,
+        actor_name,
+        actor_email,
+        actor_id,
+        raw_event: payload,
+        delivery_id,
+        signature,
+        repository_id,
+    }
+}
+
+pub async fn process_github_event(pool: &PgPool, event: &Event) -> Result<(), ProcessingError> {
     let event_type = event.event_type.as_str();
-    let payload = &event.payload;
+    let payload = &event.raw_event;
 
     match event_type {
         "push" => process_push_event(pool, event, payload).await?,
         "pull_request" => process_pull_request_event(pool, event, payload).await?,
         "issues" => process_issues_event(pool, event, payload).await?,
         _ => {
-            log::debug!("Unhandled event type: {event_type}");
+            log::debug!("Unhandled GitHub event type: {event_type}");
         }
     }
 
-    WebhookEvent::mark_processed(pool, event.id).await?;
+    Event::mark_processed(pool, event.id).await?;
 
     Ok(())
 }
 
 async fn process_push_event(
     pool: &PgPool,
-    event: &WebhookEvent,
+    event: &Event,
     payload: &JsonValue,
 ) -> Result<(), ProcessingError> {
     let repo_data = extract_repository(payload)?;
@@ -104,7 +195,7 @@ async fn process_push_event(
 
 async fn process_pull_request_event(
     pool: &PgPool,
-    event: &WebhookEvent,
+    event: &Event,
     payload: &JsonValue,
 ) -> Result<(), ProcessingError> {
     let repo_data = extract_repository(payload)?;
@@ -190,7 +281,7 @@ async fn process_pull_request_event(
 
 async fn process_issues_event(
     pool: &PgPool,
-    event: &WebhookEvent,
+    event: &Event,
     payload: &JsonValue,
 ) -> Result<(), ProcessingError> {
     let repo_data = extract_repository(payload)?;

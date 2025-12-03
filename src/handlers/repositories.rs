@@ -41,7 +41,6 @@ pub async fn list_repositories(
                     div class="flex-none gap-2" {
                         ul class="menu menu-horizontal px-1" {
                             li { a href="/" { "Dashboard" } }
-                            li { a href="/repositories" { "Repositories" } }
                             li { a href="/events" { "Events" } }
                         }
                         button
@@ -179,7 +178,6 @@ pub async fn repository_detail(
                     div class="flex-none gap-2" {
                         ul class="menu menu-horizontal px-1" {
                             li { a href="/" { "Dashboard" } }
-                            li { a href="/repositories" { "Repositories" } }
                             li { a href="/events" { "Events" } }
                         }
                         button
@@ -208,7 +206,6 @@ pub async fn repository_detail(
                 div class="container mx-auto px-4 py-8" {
                     div class="breadcrumbs text-sm mb-4" {
                         ul {
-                            li { a href="/repositories" { "Repositories" } }
                             li { (repository.full_name) }
                         }
                     }
