@@ -39,27 +39,27 @@
 :root:has(input.theme-controller[value="swiss-dark"]:checked),
 [data-theme="swiss-dark"] {
     color-scheme: dark;
-    /* Valentine colors inverted for Swiss dark theme */
-    --color-base-100: oklch(8% 0.061 343.231);
-    --color-base-200: oklch(11% 0.028 342.258);
-    --color-base-300: oklch(16% 0.014 343.198);
-    --color-base-content: oklch(89% 0.061 343.231);
-    --color-primary: oklch(65% 0.241 354.308);
-    --color-primary-content: oklch(8% 0.061 343.231);
-    --color-secondary: oklch(62% 0.265 303.9);
-    --color-secondary-content: oklch(8% 0.014 308.299);
-    --color-accent: oklch(82% 0.111 230.318);
-    --color-accent-content: oklch(16% 0.09 240.876);
-    --color-neutral: oklch(89% 0.061 343.231);
-    --color-neutral-content: oklch(40% 0.153 2.432);
-    --color-info: oklch(86% 0.127 207.078);
-    --color-info-content: oklch(16% 0.11 240.79);
-    --color-success: oklch(84% 0.143 164.978);
-    --color-success-content: oklch(16% 0.095 166.913);
-    --color-warning: oklch(75% 0.183 55.934);
-    --color-warning-content: oklch(8% 0.079 36.259);
-    --color-error: oklch(63% 0.237 25.331);
-    --color-error-content: oklch(8% 0.013 17.38);
+    /* High contrast black/dark theme */
+    --color-base-100: oklch(0% 0 0);          /* Pure black background */
+    --color-base-200: oklch(10% 0 0);         /* Dark gray for cards */
+    --color-base-300: oklch(20% 0 0);         /* Lighter gray for borders */
+    --color-base-content: oklch(100% 0 0);    /* Pure white text */
+    --color-primary: oklch(75% 0.25 265);     /* Bright electric blue */
+    --color-primary-content: oklch(0% 0 0);   /* Black text on primary */
+    --color-secondary: oklch(75% 0.25 310);   /* Bright magenta */
+    --color-secondary-content: oklch(0% 0 0); /* Black text on secondary */
+    --color-accent: oklch(80% 0.20 180);      /* Bright cyan */
+    --color-accent-content: oklch(0% 0 0);    /* Black text on accent */
+    --color-neutral: oklch(25% 0 0);          /* Dark neutral gray */
+    --color-neutral-content: oklch(95% 0 0);  /* Light gray text */
+    --color-info: oklch(75% 0.20 240);        /* Bright blue */
+    --color-info-content: oklch(0% 0 0);      /* Black text on info */
+    --color-success: oklch(75% 0.22 150);     /* Bright green */
+    --color-success-content: oklch(0% 0 0);   /* Black text on success */
+    --color-warning: oklch(80% 0.20 85);      /* Bright yellow */
+    --color-warning-content: oklch(0% 0 0);   /* Black text on warning */
+    --color-error: oklch(70% 0.25 25);        /* Bright red */
+    --color-error-content: oklch(100% 0 0);   /* White text on error */
     /* Swiss design: no rounded corners - clean rectangles */
     --radius-selector: 0.25rem;
     --radius-field: 0.25rem;
