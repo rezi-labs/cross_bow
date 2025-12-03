@@ -6,7 +6,7 @@ pub async fn dashboard(pool: web::Data<PgPool>) -> Result<HttpResponse> {
     let repo_count = crate::models::Repository::count(pool.get_ref())
         .await
         .unwrap_or(0);
-    let event_count = crate::models::WebhookEvent::count(pool.get_ref())
+    let event_count = crate::models::Event::count(pool.get_ref())
         .await
         .unwrap_or(0);
     let commit_count = crate::models::Commit::count(pool.get_ref())
@@ -32,7 +32,7 @@ pub async fn dashboard(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             head {
                 meta charset="utf-8";
                 meta name="viewport" content="width=device-width, initial-scale=1";
-                title { "Cross Bow - GitHub Observer" }
+                title { "Cross Bow - Webhook Observer" }
                 link rel="stylesheet" href="/assets/daisy.css";
                 link rel="stylesheet" href="/assets/themes.css";
                 script src="/assets/htmx.js" {}
@@ -50,7 +50,6 @@ pub async fn dashboard(pool: web::Data<PgPool>) -> Result<HttpResponse> {
                     div class="flex-none gap-2" {
                         ul class="menu menu-horizontal px-1" {
                             li { a href="/" { "Dashboard" } }
-                            li { a href="/repositories" { "Repositories" } }
                             li { a href="/events" { "Events" } }
                         }
                         button

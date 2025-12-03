@@ -4,16 +4,17 @@ use maud::{html, PreEscaped, DOCTYPE};
 use serde::Deserialize;
 use sqlx::PgPool;
 
-use crate::models::{Repository, WebhookEvent};
+use crate::models::Event;
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(default)]
 pub struct EventFilters {
     #[serde(deserialize_with = "deserialize_optional_i64")]
     pub page: Option<i64>,
+    pub source: Option<String>,
     pub event_type: Option<String>,
-    #[serde(deserialize_with = "deserialize_optional_i64")]
-    pub repository_id: Option<i64>,
+    pub action: Option<String>,
+    pub actor_name: Option<String>,
     pub processed: Option<bool>,
     pub search: Option<String>,
 }
@@ -35,14 +36,16 @@ pub async fn list_events(
     query: web::Query<EventFilters>,
 ) -> Result<HttpResponse> {
     let page = query.page.unwrap_or(1).max(1);
-    let per_page = 20;
+    let per_page = 300;
     let offset = (page - 1) * per_page;
 
     // Get filtered events
-    let events = WebhookEvent::search_and_filter(
+    let events = Event::search_and_filter(
         pool.get_ref(),
+        query.source.as_deref(),
         query.event_type.as_deref(),
-        query.repository_id,
+        query.action.as_deref(),
+        query.actor_name.as_deref(),
         query.processed,
         query.search.as_deref(),
         per_page,
@@ -51,23 +54,25 @@ pub async fn list_events(
     .await
     .unwrap_or_default();
 
-    let total_count = WebhookEvent::count_filtered(
+    let total_count = Event::count_filtered(
         pool.get_ref(),
+        query.source.as_deref(),
         query.event_type.as_deref(),
-        query.repository_id,
+        query.action.as_deref(),
+        query.actor_name.as_deref(),
         query.processed,
         query.search.as_deref(),
     )
     .await
     .unwrap_or(0);
 
-    // Get all repositories for filter dropdown
-    let repositories = Repository::list_all(pool.get_ref(), 1000, 0)
+    // Get unique event types, sources, actions, and actor names for filter dropdowns
+    let event_types = Event::get_event_types(pool.get_ref())
         .await
         .unwrap_or_default();
-
-    // Get unique event types for filter dropdown
-    let event_types = WebhookEvent::get_event_types(pool.get_ref())
+    let sources = Event::get_sources(pool.get_ref()).await.unwrap_or_default();
+    let actions = Event::get_actions(pool.get_ref()).await.unwrap_or_default();
+    let actor_names = Event::get_actor_names(pool.get_ref())
         .await
         .unwrap_or_default();
 
@@ -103,7 +108,7 @@ pub async fn list_events(
                                 hx-get="/events"
                                 hx-target="body"
                                 hx-push-url="true"
-                                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+                                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4"
                             {
                                 // Search input
                                 div class="form-control" {
@@ -120,7 +125,31 @@ pub async fn list_events(
                                         hx-target="body"
                                         hx-push-url="true"
                                         hx-trigger="input changed delay:500ms"
-                                        hx-include="[name='event_type'], [name='repository_id'], [name='processed']";
+                                        hx-include="[name='source'], [name='event_type'], [name='action'], [name='actor_name'], [name='processed']";
+                                }
+
+                                // Source filter
+                                div class="form-control" {
+                                    label class="label" {
+                                        span class="label-text" { "Source" }
+                                    }
+                                    select
+                                        name="source"
+                                        class="select select-bordered"
+                                        hx-get="/events"
+                                        hx-target="body"
+                                        hx-push-url="true"
+                                        hx-trigger="change"
+                                        hx-include="[name='search'], [name='event_type'], [name='action'], [name='actor_name'], [name='processed']"
+                                    {
+                                        option value="" selected[query.source.is_none()] { "All Sources" }
+                                        @for source in &sources {
+                                            option
+                                                value=(source)
+                                                selected[query.source.as_deref() == Some(source.as_str())]
+                                            { (source) }
+                                        }
+                                    }
                                 }
 
                                 // Event type filter
@@ -135,7 +164,7 @@ pub async fn list_events(
                                         hx-target="body"
                                         hx-push-url="true"
                                         hx-trigger="change"
-                                        hx-include="[name='search'], [name='repository_id'], [name='processed']"
+                                        hx-include="[name='search'], [name='source'], [name='action'], [name='actor_name'], [name='processed']"
                                     {
                                         option value="" selected[query.event_type.is_none()] { "All Types" }
                                         @for event_type in &event_types {
@@ -147,26 +176,50 @@ pub async fn list_events(
                                     }
                                 }
 
-                                // Repository filter
+                                // Action filter
                                 div class="form-control" {
                                     label class="label" {
-                                        span class="label-text" { "Repository" }
+                                        span class="label-text" { "Action" }
                                     }
                                     select
-                                        name="repository_id"
+                                        name="action"
                                         class="select select-bordered"
                                         hx-get="/events"
                                         hx-target="body"
                                         hx-push-url="true"
                                         hx-trigger="change"
-                                        hx-include="[name='search'], [name='event_type'], [name='processed']"
+                                        hx-include="[name='search'], [name='source'], [name='event_type'], [name='actor_name'], [name='processed']"
                                     {
-                                        option value="" selected[query.repository_id.is_none()] { "All Repositories" }
-                                        @for repo in &repositories {
+                                        option value="" selected[query.action.is_none()] { "All Actions" }
+                                        @for action in &actions {
                                             option
-                                                value=(repo.id)
-                                                selected[query.repository_id == Some(repo.id)]
-                                            { (repo.full_name) }
+                                                value=(action)
+                                                selected[query.action.as_deref() == Some(action.as_str())]
+                                            { (action) }
+                                        }
+                                    }
+                                }
+
+                                // Actor name filter
+                                div class="form-control" {
+                                    label class="label" {
+                                        span class="label-text" { "Actor" }
+                                    }
+                                    select
+                                        name="actor_name"
+                                        class="select select-bordered"
+                                        hx-get="/events"
+                                        hx-target="body"
+                                        hx-push-url="true"
+                                        hx-trigger="change"
+                                        hx-include="[name='search'], [name='source'], [name='event_type'], [name='action'], [name='processed']"
+                                    {
+                                        option value="" selected[query.actor_name.is_none()] { "All Actors" }
+                                        @for actor_name in &actor_names {
+                                            option
+                                                value=(actor_name)
+                                                selected[query.actor_name.as_deref() == Some(actor_name.as_str())]
+                                            { (actor_name) }
                                         }
                                     }
                                 }
@@ -183,7 +236,7 @@ pub async fn list_events(
                                         hx-target="body"
                                         hx-push-url="true"
                                         hx-trigger="change"
-                                        hx-include="[name='search'], [name='event_type'], [name='repository_id']"
+                                        hx-include="[name='search'], [name='source'], [name='event_type'], [name='action'], [name='actor_name']"
                                     {
                                         option value="" selected[query.processed.is_none()] { "All Status" }
                                         option value="true" selected[query.processed == Some(true)] { "Processed" }
@@ -207,14 +260,15 @@ pub async fn list_events(
                     // Events table
                     div class="card bg-base-100 shadow-xl mb-6" {
                         div class="card-body p-0" {
-                            div class="overflow-x-auto" {
+                            div class="overflow-x-auto max-h-[600px] overflow-y-auto" {
                                 table class="table table-zebra" {
                                     thead {
                                         tr {
                                             th { "ID" }
+                                            th { "Source" }
                                             th { "Event Type" }
                                             th { "Action" }
-                                            th { "Repository" }
+                                            th { "Actor" }
                                             th { "Received" }
                                             th { "Status" }
                                             th { "Actions" }
@@ -223,7 +277,7 @@ pub async fn list_events(
                                     tbody {
                                         @if events.is_empty() {
                                             tr {
-                                                td colspan="7" class="text-center text-base-content/60 py-8" {
+                                                td colspan="8" class="text-center text-base-content/60 py-8" {
                                                     "No events found matching the filters"
                                                 }
                                             }
@@ -232,23 +286,25 @@ pub async fn list_events(
                                                 tr {
                                                     td { (event.id) }
                                                     td {
+                                                        span class="badge badge-secondary" { (event.source) }
+                                                    }
+                                                    td {
                                                         span class="badge badge-primary" { (event.event_type) }
                                                     }
                                                     td {
-                                                        @if let Some(action) = &event.event_action {
+                                                        @if let Some(action) = &event.action {
                                                             span class="badge badge-ghost" { (action) }
                                                         } @else {
                                                             span class="text-base-content/60" { "-" }
                                                         }
                                                     }
                                                     td {
-                                                        @if let Some(repo_id) = event.repository_id {
-                                                            @if let Some(repo) = repositories.iter().find(|r| r.id == repo_id) {
-                                                                a href=(format!("/repositories/{}", repo_id)) class="link link-hover" {
-                                                                    (repo.full_name)
+                                                        @if let Some(actor_name) = &event.actor_name {
+                                                            div class="text-sm" {
+                                                                div { (actor_name) }
+                                                                @if let Some(actor_email) = &event.actor_email {
+                                                                    div class="text-xs text-base-content/60" { (actor_email) }
                                                                 }
-                                                            } @else {
-                                                                span class="text-base-content/60" { "Unknown" }
                                                             }
                                                         } @else {
                                                             span class="text-base-content/60" { "-" }
@@ -278,17 +334,27 @@ pub async fn list_events(
                                                 dialog id=(format!("event-modal-{}", event.id)) class="modal" {
                                                     div class="modal-box max-w-4xl" {
                                                         h3 class="font-bold text-lg mb-4" {
-                                                            "Event #" (event.id) " - " (event.event_type)
+                                                            "Event #" (event.id) " - " (event.source) " - " (event.event_type)
                                                         }
                                                         div class="space-y-4" {
                                                             div {
                                                                 h4 class="font-semibold" { "Details" }
                                                                 div class="grid grid-cols-2 gap-2 text-sm mt-2" {
+                                                                    div { span class="font-medium" { "Source: " } (event.source) }
                                                                     div { span class="font-medium" { "Delivery ID: " } (event.delivery_id) }
                                                                     div { span class="font-medium" { "Received: " } (format_datetime(&event.received_at)) }
                                                                     div { span class="font-medium" { "Event Type: " } (event.event_type) }
-                                                                    @if let Some(action) = &event.event_action {
+                                                                    @if let Some(action) = &event.action {
                                                                         div { span class="font-medium" { "Action: " } (action) }
+                                                                    }
+                                                                    @if let Some(actor_name) = &event.actor_name {
+                                                                        div { span class="font-medium" { "Actor: " } (actor_name) }
+                                                                    }
+                                                                    @if let Some(actor_email) = &event.actor_email {
+                                                                        div { span class="font-medium" { "Actor Email: " } (actor_email) }
+                                                                    }
+                                                                    @if let Some(actor_id) = &event.actor_id {
+                                                                        div { span class="font-medium" { "Actor ID: " } (actor_id) }
                                                                     }
                                                                     div { span class="font-medium" { "Status: " }
                                                                         @if event.processed {
@@ -303,10 +369,10 @@ pub async fn list_events(
                                                                 }
                                                             }
                                                             div {
-                                                                h4 class="font-semibold mb-2" { "Payload" }
+                                                                h4 class="font-semibold mb-2" { "Raw Event Payload" }
                                                                 pre class="bg-base-200 p-4 rounded-lg overflow-x-auto text-xs" {
                                                                     code {
-                                                                        (PreEscaped(serde_json::to_string_pretty(&event.payload).unwrap_or_else(|_| "{}".to_string())))
+                                                                        (PreEscaped(serde_json::to_string_pretty(&event.raw_event).unwrap_or_else(|_| "{}".to_string())))
                                                                     }
                                                                 }
                                                             }
@@ -360,7 +426,6 @@ fn render_navbar() -> maud::Markup {
             div class="flex-none gap-2" {
                 ul class="menu menu-horizontal px-1" {
                     li { a href="/" { "Dashboard" } }
-                    li { a href="/repositories" { "Repositories" } }
                     li { a href="/events" class="active" { "Events" } }
                 }
                 button
@@ -395,11 +460,17 @@ fn format_datetime(dt: &DateTime<Utc>) -> String {
 fn build_page_url(page: i64, query: &web::Query<EventFilters>) -> String {
     let mut params = vec![format!("page={}", page)];
 
+    if let Some(source) = &query.source {
+        params.push(format!("source={source}"));
+    }
     if let Some(event_type) = &query.event_type {
         params.push(format!("event_type={event_type}"));
     }
-    if let Some(repository_id) = query.repository_id {
-        params.push(format!("repository_id={repository_id}"));
+    if let Some(action) = &query.action {
+        params.push(format!("action={action}"));
+    }
+    if let Some(actor_name) = &query.actor_name {
+        params.push(format!("actor_name={actor_name}"));
     }
     if let Some(processed) = query.processed {
         params.push(format!("processed={processed}"));

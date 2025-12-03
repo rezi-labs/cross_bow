@@ -52,6 +52,7 @@ impl WebhookEvent {
         Ok(event)
     }
 
+    #[allow(dead_code)]
     pub async fn mark_processed(pool: &sqlx::PgPool, id: i64) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE webhook_events SET processed = true, processed_at = NOW() WHERE id = $1",
@@ -128,6 +129,7 @@ impl WebhookEvent {
         Ok(events)
     }
 
+    #[allow(dead_code)]
     pub async fn count(pool: &sqlx::PgPool) -> Result<i64, sqlx::Error> {
         let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM webhook_events")
             .fetch_one(pool)
@@ -136,6 +138,7 @@ impl WebhookEvent {
         Ok(count.0)
     }
 
+    #[allow(dead_code)]
     pub async fn search_and_filter(
         pool: &sqlx::PgPool,
         event_type: Option<&str>,
@@ -193,6 +196,7 @@ impl WebhookEvent {
         Ok(events)
     }
 
+    #[allow(dead_code)]
     pub async fn count_filtered(
         pool: &sqlx::PgPool,
         event_type: Option<&str>,
@@ -239,6 +243,7 @@ impl WebhookEvent {
         Ok(count.0)
     }
 
+    #[allow(dead_code)]
     pub async fn get_event_types(pool: &sqlx::PgPool) -> Result<Vec<String>, sqlx::Error> {
         let types: Vec<(String,)> =
             sqlx::query_as("SELECT DISTINCT event_type FROM webhook_events ORDER BY event_type")

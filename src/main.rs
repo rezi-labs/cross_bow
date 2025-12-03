@@ -42,6 +42,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(config.clone()))
             // API routes
             .route("/webhooks/github", web::post().to(handlers::github_webhook))
+            .route(
+                "/webhook/{source}",
+                web::post().to(handlers::generic_webhook),
+            )
             // Web interface routes
             .route("/", web::get().to(handlers::dashboard))
             .route("/repositories", web::get().to(handlers::list_repositories))
