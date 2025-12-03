@@ -7,6 +7,7 @@ export LOCAL := "true"
 export POSTGRES_PASSWORD := "postgres"
 export POSTGRES_USER := "postgres"
 export POSTGRES_DB := "taste"
+export DATABASE_URL := "postgres://" + POSTGRES_USER + ":" + POSTGRES_PASSWORD + "@localhost:5500/" + POSTGRES_DB
 
 docker:
     docker compose up
@@ -37,19 +38,19 @@ generate-session-secret:
 # Start PostgreSQL database with persistent volume
 start-db: stop-db
     docker run -d \
-        --name taste-postgres \
+        --name cross-bow-postgres \
         -e POSTGRES_PASSWORD={{POSTGRES_PASSWORD}} \
         -e POSTGRES_USER={{POSTGRES_USER}} \
         -e POSTGRES_DB={{POSTGRES_DB}} \
         -p 5500:5432 \
-        -v taste-postgres-data:/var/lib/postgresql/data \
+        -v cross-bow-postgres-data:/var/lib/postgresql/data \
         postgres:18-alpine
 
 # Stop PostgreSQL database
 stop-db:
-    docker stop taste-postgres || true
-    docker rm taste-postgres || true
+    docker stop cross-bow-postgres || true
+    docker rm cross-bow-postgres || true
 
 # Wipe PostgreSQL database volume (removes all data)
 wipe-db-volume: stop-db
-    docker volume rm taste-postgres-data || true
+    docker volume rm cross-bow-postgres-data || true
