@@ -63,6 +63,7 @@ impl WebhookEvent {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn find_by_id(pool: &sqlx::PgPool, id: i64) -> Result<Option<Self>, sqlx::Error> {
         let event = sqlx::query_as::<_, WebhookEvent>("SELECT * FROM webhook_events WHERE id = $1")
             .bind(id)
@@ -72,6 +73,7 @@ impl WebhookEvent {
         Ok(event)
     }
 
+    #[allow(dead_code)]
     pub async fn list_by_repository(
         pool: &sqlx::PgPool,
         repository_id: i64,
@@ -90,6 +92,7 @@ impl WebhookEvent {
         Ok(events)
     }
 
+    #[allow(dead_code)]
     pub async fn list_all(
         pool: &sqlx::PgPool,
         limit: i64,
@@ -106,6 +109,7 @@ impl WebhookEvent {
         Ok(events)
     }
 
+    #[allow(dead_code)]
     pub async fn list_by_type(
         pool: &sqlx::PgPool,
         event_type: &str,

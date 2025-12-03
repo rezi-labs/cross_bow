@@ -87,6 +87,7 @@ impl Issue {
         Ok(issues)
     }
 
+    #[allow(dead_code)]
     pub async fn list_all(
         pool: &sqlx::PgPool,
         limit: i64,
@@ -103,6 +104,7 @@ impl Issue {
         Ok(issues)
     }
 
+    #[allow(dead_code)]
     pub async fn list_by_state(
         pool: &sqlx::PgPool,
         state: &str,

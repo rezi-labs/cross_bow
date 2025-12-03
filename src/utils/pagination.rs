@@ -26,6 +26,7 @@ impl PaginationParams {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Pagination {
     pub page: i64,
@@ -37,6 +38,7 @@ pub struct Pagination {
 }
 
 impl Pagination {
+    #[allow(dead_code)]
     pub fn new(page: i64, per_page: i64, total_items: i64) -> Self {
         let total_pages = (total_items as f64 / per_page as f64).ceil() as i64;
         let has_next = page < total_pages;
@@ -52,6 +54,7 @@ impl Pagination {
         }
     }
 
+    #[allow(dead_code)]
     pub fn next_page(&self) -> Option<i64> {
         if self.has_next {
             Some(self.page + 1)
@@ -60,6 +63,7 @@ impl Pagination {
         }
     }
 
+    #[allow(dead_code)]
     pub fn prev_page(&self) -> Option<i64> {
         if self.has_prev {
             Some(self.page - 1)
