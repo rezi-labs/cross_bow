@@ -42,7 +42,10 @@ pub async fn dashboard(pool: web::Data<PgPool>) -> Result<HttpResponse> {
             body {
                 div class="navbar bg-base-100 shadow-lg" {
                     div class="flex-1" {
-                        a class="btn btn-ghost text-xl" href="/" { "Cross Bow" }
+                        a class="btn btn-ghost text-xl gap-2" href="/" {
+                            img src="/assets/crossbow-logo.svg" alt="Cross Bow Logo" class="w-8 h-8";
+                            span { "Cross Bow" }
+                        }
                     }
                     div class="flex-none gap-2" {
                         ul class="menu menu-horizontal px-1" {
@@ -101,16 +104,6 @@ pub async fn dashboard(pool: web::Data<PgPool>) -> Result<HttpResponse> {
                             div class="stat-title" { "Issues" }
                             div class="stat-value" { (issue_count) }
                             div class="stat-desc" { "Open: " (open_issue_count) }
-                        }
-                    }
-
-                    div class="card bg-base-100 shadow-xl" {
-                        div class="card-body" {
-                            h2 class="card-title" { "Welcome to Cross Bow" }
-                            p { "GitHub webhook monitoring and event tracking system." }
-                            div class="card-actions justify-end" {
-                                a class="btn btn-primary" href="/repositories" { "View Repositories" }
-                            }
                         }
                     }
                 }

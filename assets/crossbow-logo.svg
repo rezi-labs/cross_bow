@@ -1,0 +1,50 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Retro pixel-art style crossbow -->
+  <defs>
+    <linearGradient id="woodGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B4513;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#654321;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="metalGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#B8B8B8;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#E8E8E8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A0A0A0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Bow arms (top and bottom) -->
+  <path d="M 8 12 L 12 8 L 16 10 L 18 14 L 16 16 L 12 18 L 8 16 Z" fill="#654321" stroke="#4A3010" stroke-width="1"/>
+  <path d="M 8 36 L 12 40 L 16 38 L 18 34 L 16 32 L 12 30 L 8 32 Z" fill="#654321" stroke="#4A3010" stroke-width="1"/>
+  
+  <!-- Bow limbs (curved parts) -->
+  <path d="M 12 8 Q 6 12 4 24 Q 6 36 12 40" stroke="#8B4513" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M 16 10 Q 10 14 8 24 Q 10 34 16 38" stroke="#654321" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Bowstring -->
+  <line x1="16" y1="14" x2="16" y2="34" stroke="#D4AF37" stroke-width="1.5" opacity="0.8"/>
+  <line x1="16" y1="15" x2="16" y2="33" stroke="#FFD700" stroke-width="0.5" opacity="0.6"/>
+  
+  <!-- Stock (main body) -->
+  <rect x="16" y="20" width="28" height="8" fill="url(#woodGradient)" stroke="#4A3010" stroke-width="1"/>
+  <rect x="18" y="21" width="24" height="2" fill="#A0826D" opacity="0.5"/>
+  
+  <!-- Trigger mechanism -->
+  <rect x="22" y="24" width="4" height="6" fill="url(#metalGradient)" stroke="#606060" stroke-width="0.5"/>
+  <circle cx="24" cy="25" r="1" fill="#404040"/>
+  
+  <!-- Arrow -->
+  <line x1="18" y1="24" x2="38" y2="24" stroke="url(#metalGradient)" stroke-width="2"/>
+  <polygon points="38,24 42,22 44,24 42,26" fill="#B8B8B8" stroke="#808080" stroke-width="0.5"/>
+  <polygon points="18,24 16,23 16,25" fill="#8B4513"/>
+  
+  <!-- Decorative elements (retro style) -->
+  <rect x="28" y="22" width="2" height="4" fill="#FFD700" opacity="0.6"/>
+  <rect x="32" y="22" width="2" height="4" fill="#FFD700" opacity="0.6"/>
+  
+  <!-- Flight feathers on arrow -->
+  <path d="M 18 23 L 16 21 L 16 23 Z" fill="#DC143C" opacity="0.8"/>
+  <path d="M 18 25 L 16 27 L 16 25 Z" fill="#DC143C" opacity="0.8"/>
+  
+  <!-- Shadow/depth effect -->
+  <rect x="17" y="27" width="26" height="1" fill="#000000" opacity="0.2"/>
+</svg>
