@@ -83,6 +83,7 @@ impl Commit {
         Ok(commits)
     }
 
+    #[allow(dead_code)]
     pub async fn list_all(
         pool: &sqlx::PgPool,
         limit: i64,
@@ -99,6 +100,7 @@ impl Commit {
         Ok(commits)
     }
 
+    #[allow(dead_code)]
     pub async fn list_by_author(
         pool: &sqlx::PgPool,
         author_email: &str,

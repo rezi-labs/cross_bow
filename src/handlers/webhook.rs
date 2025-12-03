@@ -52,7 +52,7 @@ pub async fn github_webhook(
 
     // Extract repository ID if present
     let repository_id = if let Some(repo) = payload["repository"].as_object() {
-        if let Some(id) = repo["id"].as_i64() {
+        if let Some(_id) = repo["id"].as_i64() {
             // Try to find or create repository
             match crate::models::Repository::find_by_full_name(
                 pool.get_ref(),
