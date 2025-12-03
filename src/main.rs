@@ -30,6 +30,7 @@ async fn main() -> std::io::Result<()> {
     log::info!("Running database migrations...");
 
     log::info!("Server starting on http://{server_address}");
+    log::info!("🌐 Click here to open: http://localhost:{}", config.port);
 
     // Start HTTP server
     HttpServer::new(move || {
@@ -48,6 +49,7 @@ async fn main() -> std::io::Result<()> {
                 "/repositories/{id}",
                 web::get().to(handlers::repository_detail),
             )
+            .route("/events", web::get().to(handlers::list_events))
             // Static file serving
             .service(fs::Files::new("/assets", "./assets").show_files_listing())
     })

@@ -3,6 +3,7 @@ import? 'private.just'
 
 image_name := "ghcr.io/rezi-labs/cross_bow"
 
+export RUST_LOG := 'cross_bow=info,actix_web=error'
 export LOCAL := "true"
 export POSTGRES_PASSWORD := "postgres"
 export POSTGRES_USER := "postgres"
