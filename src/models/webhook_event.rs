@@ -131,4 +131,116 @@ impl WebhookEvent {
 
         Ok(count.0)
     }
+
+    pub async fn search_and_filter(
+        pool: &sqlx::PgPool,
+        event_type: Option<&str>,
+        repository_id: Option<i64>,
+        processed: Option<bool>,
+        search: Option<&str>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let mut query = String::from("SELECT * FROM webhook_events WHERE 1=1");
+        let mut bindings = Vec::new();
+        let mut param_count = 1;
+
+        if let Some(et) = event_type {
+            query.push_str(&format!(" AND event_type = ${param_count}"));
+            bindings.push(et.to_string());
+            param_count += 1;
+        }
+
+        if let Some(rid) = repository_id {
+            query.push_str(&format!(" AND repository_id = ${param_count}"));
+            bindings.push(rid.to_string());
+            param_count += 1;
+        }
+
+        if let Some(proc) = processed {
+            query.push_str(&format!(" AND processed = ${param_count}"));
+            bindings.push(proc.to_string());
+            param_count += 1;
+        }
+
+        if let Some(s) = search {
+            if !s.is_empty() {
+                query.push_str(&format!(" AND payload::text ILIKE ${param_count}"));
+                bindings.push(format!("%{s}%"));
+                param_count += 1;
+            }
+        }
+
+        query.push_str(&format!(
+            " ORDER BY received_at DESC LIMIT ${} OFFSET ${}",
+            param_count,
+            param_count + 1
+        ));
+        bindings.push(limit.to_string());
+        bindings.push(offset.to_string());
+
+        let mut query_builder = sqlx::query_as::<_, WebhookEvent>(&query);
+        for binding in bindings {
+            query_builder = query_builder.bind(binding);
+        }
+
+        let events = query_builder.fetch_all(pool).await?;
+
+        Ok(events)
+    }
+
+    pub async fn count_filtered(
+        pool: &sqlx::PgPool,
+        event_type: Option<&str>,
+        repository_id: Option<i64>,
+        processed: Option<bool>,
+        search: Option<&str>,
+    ) -> Result<i64, sqlx::Error> {
+        let mut query = String::from("SELECT COUNT(*) FROM webhook_events WHERE 1=1");
+        let mut bindings = Vec::new();
+        let mut param_count = 1;
+
+        if let Some(et) = event_type {
+            query.push_str(&format!(" AND event_type = ${param_count}"));
+            bindings.push(et.to_string());
+            param_count += 1;
+        }
+
+        if let Some(rid) = repository_id {
+            query.push_str(&format!(" AND repository_id = ${param_count}"));
+            bindings.push(rid.to_string());
+            param_count += 1;
+        }
+
+        if let Some(proc) = processed {
+            query.push_str(&format!(" AND processed = ${param_count}"));
+            bindings.push(proc.to_string());
+            param_count += 1;
+        }
+
+        if let Some(s) = search {
+            if !s.is_empty() {
+                query.push_str(&format!(" AND payload::text ILIKE ${param_count}"));
+                bindings.push(format!("%{s}%"));
+            }
+        }
+
+        let mut query_builder = sqlx::query_as::<_, (i64,)>(&query);
+        for binding in bindings {
+            query_builder = query_builder.bind(binding);
+        }
+
+        let count = query_builder.fetch_one(pool).await?;
+
+        Ok(count.0)
+    }
+
+    pub async fn get_event_types(pool: &sqlx::PgPool) -> Result<Vec<String>, sqlx::Error> {
+        let types: Vec<(String,)> =
+            sqlx::query_as("SELECT DISTINCT event_type FROM webhook_events ORDER BY event_type")
+                .fetch_all(pool)
+                .await?;
+
+        Ok(types.into_iter().map(|(t,)| t).collect())
+    }
 }
